@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Models\V1\{{Feature}};
+
+use App\ModelFilters\V1\{{Feature}}\{{Features}}Filter;
+use App\Policies\V1\{{Feature}}\{{Feature}}Policy;
+use eloquentFilter\QueryFilter\ModelFilters\Filterable;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Model;
+use Spatie\Sluggable\HasSlug;
+use Spatie\Sluggable\SlugOptions;
+
+#[UsePolicy({{Feature}}Policy::class)]
+class {{Feature}} extends Model
+{
+    use HasSlug, Filterable, {{Features}}Filter;
+
+    protected $table = '{{table}}';
+
+    protected $fillable = [
+        'title',
+        'description',
+        'user_id',
+    ];
+
+    private static array $whiteListFilter = [
+        'slug',
+    ];
+
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom('title')
+            ->saveSlugsTo('slug');
+    }
+
+    // Add this feature's specific relationships, casts and fillable fields here.
+}

@@ -1,0 +1,49 @@
+FROM  docker.arvancloud.ir/php:8.5-fpm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+#RUN cat > /etc/apt/sources.list <<'EOF'
+#deb http://mirror-linux.runflare.com/debian trixie main
+#deb http://mirror-linux.runflare.com/debian-security trixie-security main
+#EOF
+
+RUN apt-get update
+
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    curl \
+    ca-certificates \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libonig-dev \
+    libxml2-dev \
+    libssl-dev \
+    librdkafka-dev \
+    pkg-config \
+    autoconf \
+    nano \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+    pdo_pgsql \
+    pcntl \
+    bcmath \
+    zip \
+    exif \
+    sockets \
+    gd
+
+RUN getent ahostsv4 pecl.php.net && \
+    pecl install redis swoole rdkafka && \
+    docker-php-ext-enable redis swoole rdkafka
+
+RUN apt-get update && apt-get install -y supervisor
+
+COPY --from=docker.arvancloud.ir/composer:latest /usr/bin/composer /usr/bin/composer

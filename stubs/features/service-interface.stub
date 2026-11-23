@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Services\V1\{{Feature}}\Interfaces;
+
+use App\Models\V1\{{Feature}}\{{Feature}};
+use Illuminate\Database\Eloquent\Model;
+
+interface {{Feature}}ServiceInterface
+{
+    public function index(): array;
+
+    public function publicIndex(): array;
+
+    public function show({{Feature}} ${{feature}}): {{Feature}}|Model;
+
+    public function find(int $id): {{Feature}}|Model;
+
+    public function store(array $inputs): {{Feature}}|Model;
+
+    public function update(array $inputs, {{Feature}} ${{feature}}): {{Feature}}|Model;
+
+    public function destroy({{Feature}} ${{feature}}): {{Feature}}|Model;
+}

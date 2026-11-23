@@ -1,0 +1,27 @@
+stages:
+  - Develop
+  - Product
+variables:
+  IMAGE_NAME: c0mm4nder/ontv-mag-api
+  REGISTRY_IP: 94.232.173.181:5000
+  REGISTRY: hub.avin-it.ir
+  DEP_DEV: ontv-mag-api
+  APP_VERSION : '${CI_PIPELINE_IID}'
+build_1:
+  stage: Develop
+  tags:
+    - shell-runner
+  script:
+    - docker buildx build  --file Dockerfile -t ${REGISTRY}/${IMAGE_NAME}:${APP_VERSION}  .
+    - docker push ${REGISTRY}/${IMAGE_NAME}:${APP_VERSION} 
+    - kubectl --insecure-skip-tls-verify --kubeconfig=/mnt/rancher.yml set image deployment/${DEP_DEV} ${DEP_DEV}=${REGISTRY}/${IMAGE_NAME}:${APP_VERSION} -n ontv
+
+deploy_1:
+  stage: Product
+  tags:
+     - tebyan
+  # only:
+  #   - master
+  script:
+    - kubectl --insecure-skip-tls-verify --kubeconfig=/home/gitlab-runner/tebyan.yaml set image deployment/ontv-mag-api ontv-mag-api=${REGISTRY}/${IMAGE_NAME}:${APP_VERSION} -n on-mag
+  when: manual

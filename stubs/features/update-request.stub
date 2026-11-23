@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Http\Requests\V1\{{Feature}};
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+
+class {{Feature}}UpdateRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return Auth::check();
+    }
+
+    /**
+     * @return array<string, ValidationRule|array|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'title' => ['sometimes', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:700'],
+            // Add the feature-specific validation rules here.
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.string' => 'عنوان باید به صورت متن وارد شود.',
+            'title.max' => 'عنوان نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد.',
+            'description.string' => 'توضیحات باید به صورت متن وارد شود.',
+            'description.max' => 'توضیحات نمی‌تواند بیشتر از ۷۰۰ کاراکتر باشد.',
+        ];
+    }
+}

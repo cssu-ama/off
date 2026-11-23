@@ -1,0 +1,144 @@
+services:
+  app:
+    container_name: on_mag_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8082:8000"
+
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    #      horizon:
+    #      reverb:
+
+    environment:
+      DB_HOST: pgbouncer
+      DB_PORT: 5432
+      DB_DATABASE: app_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./:/var/www
+    networks:
+      - on_mag_dev_net
+
+  #  reverb:
+  #    build:
+  #      context: .
+  #      dockerfile: Dockerfile
+  #    container_name: on_mag_reverb
+  #    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+  #    ports:
+  #      - "8090:8080"
+  #    depends_on:
+  #      - redis
+  #    networks:
+  #      - on_mag_dev_net
+
+  #  horizon:
+  #    build:
+  #      context: .
+  #      dockerfile: Dockerfile
+  #    container_name: on_mag_horizon
+  #    command: php artisan horizon
+  #    restart: unless-stopped
+  #    depends_on:
+  #      - redis
+  #      - postgres
+  #    networks:
+  #      - on_mag_dev_net
+
+  postgres:
+    image: postgres:17
+    container_name: on_mag_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Tehran
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./.docker/postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d app_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - on_mag_dev_net
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: on_mag_pgbouncer_dev
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: app_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+      AUTH_TYPE: scram-sha-256
+
+      POOL_MODE: session
+      MAX_CLIENT_CONN: 500
+      DEFAULT_POOL_SIZE: 20
+
+    ports:
+      - "6432:5432"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d app_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    networks:
+      - on_mag_dev_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: on_mag_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6382:6379"
+    volumes:
+      - ./.docker/redis_data:/data
+    networks:
+      - on_mag_dev_net
+
+  redis_insight:
+    image: redis/redisinsight:latest
+    container_name: on_mag_redis_insight_dev
+    restart: unless-stopped
+    ports:
+      - "5542:5540"
+    volumes:
+      - ./.docker/redis_insight_data:/data
+    networks:
+      - on_mag_dev_net
+
+networks:
+  on_mag_dev_net:
+    driver: bridge
+#    ipam:
+#      config:
+#        - subnet: 172.40.0.0/16

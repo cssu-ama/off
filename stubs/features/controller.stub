@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Http\Controllers\V1\{{Feature}};
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\{{Feature}}\{{Feature}}StoreRequest;
+use App\Http\Requests\V1\{{Feature}}\{{Feature}}UpdateRequest;
+use App\Http\Resources\V1\{{Feature}}\Admin\{{Feature}}Collection;
+use App\Http\Resources\V1\{{Feature}}\Admin\{{Feature}}Resource;
+use App\Http\Resources\V1\{{Feature}}\Public\Public{{Feature}}Collection;
+use App\Http\Resources\V1\{{Feature}}\Public\Public{{Feature}}Resource;
+use App\Models\V1\{{Feature}}\{{Feature}};
+use App\Services\V1\{{Feature}}\Interfaces\{{Feature}}ServiceInterface;
+use Exception;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+
+class {{Feature}}Controller extends Controller
+{
+    use AuthorizesRequests;
+
+    public function __construct(protected {{Feature}}ServiceInterface ${{feature}}Service)
+    {
+    }
+
+    public function index(): JsonResponse
+    {
+        try {
+            $this->authorize('viewAny', {{Feature}}::class);
+
+            return response()->json($this->{{feature}}Service->index());
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function publicIndex(): JsonResponse
+    {
+        try {
+            return response()->json($this->{{feature}}Service->publicIndex());
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function show({{Feature}} ${{feature}}): JsonResponse
+    {
+        try {
+            $this->authorize('view', ${{feature}});
+            $data = $this->{{feature}}Service->show(${{feature}});
+
+            return response()->json([
+                'success' => true,
+                'data' => {{Feature}}Resource::make($data),
+                'message' => 'مورد موردنظر با موفقیت دریافت شد.',
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function publicShow({{Feature}} ${{feature}}): JsonResponse
+    {
+        try {
+            // TODO: Ensure this record is publicly visible before exposing it.
+            $data = $this->{{feature}}Service->show(${{feature}});
+
+            return response()->json([
+                'success' => true,
+                'data' => Public{{Feature}}Resource::make($data),
+                'message' => 'مورد موردنظر با موفقیت دریافت شد.',
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function store({{Feature}}StoreRequest $request): JsonResponse
+    {
+        try {
+            $this->authorize('create', {{Feature}}::class);
+
+            $inputs = $request->validated();
+            $inputs['user_id'] = Auth::id();
+            $data = $this->{{feature}}Service->store($inputs);
+
+            return response()->json([
+                'success' => true,
+                'data' => {{Feature}}Resource::make($data),
+                'message' => 'مورد جدید با موفقیت ایجاد شد.',
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function update({{Feature}}UpdateRequest $request, {{Feature}} ${{feature}}): JsonResponse
+    {
+        try {
+            $this->authorize('update', ${{feature}});
+
+            $data = $this->{{feature}}Service->update(
+                $request->validated(),
+                ${{feature}}
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => {{Feature}}Resource::make($data),
+                'message' => 'مورد موردنظر با موفقیت بروزرسانی شد.',
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function destroy({{Feature}} ${{feature}}): JsonResponse
+    {
+        try {
+            $this->authorize('delete', ${{feature}});
+            $data = $this->{{feature}}Service->destroy(${{feature}});
+
+            return response()->json([
+                'success' => true,
+                'data' => {{Feature}}Resource::make($data),
+                'message' => 'مورد موردنظر با موفقیت حذف شد.',
+            ]);
+        } catch (Exception $exception) {
+            return response()->json([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+}

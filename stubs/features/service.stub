@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Services\V1\{{Feature}};
+
+use App\Http\Resources\V1\{{Feature}}\Admin\{{Feature}}Collection;
+use App\Http\Resources\V1\{{Feature}}\Public\Public{{Feature}}Collection;
+use App\Models\V1\{{Feature}}\{{Feature}};
+use App\Services\V1\{{Feature}}\Interfaces\{{Feature}}ServiceInterface;
+use App\Traits\V1\Core\Cache\ClearsRedisCache;
+use Exception;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Redis;
+
+class {{Feature}}Service implements {{Feature}}ServiceInterface
+{
+    use ClearsRedisCache;
+
+    public function index(): array
+    {
+        $cacheKey = $this->get{{Features}}CacheKey();
+        $cached = $this->get{{Features}}FromCache($cacheKey);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $data = {{Feature}}Collection::make($this->get{{Features}}())->resolve();
+        $this->cache{{Features}}($cacheKey, $data);
+
+        return $data;
+    }
+
+    public function publicIndex(): array
+    {
+        $cacheKey = $this->get{{Features}}CacheKey();
+        $cached = $this->get{{Features}}FromCache($cacheKey);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $data = Public{{Feature}}Collection::make($this->getPublic{{Features}}())->resolve();
+        $this->cache{{Features}}($cacheKey, $data);
+
+        return $data;
+    }
+
+    public function show({{Feature}} ${{feature}}): {{Feature}}|Model
+    {
+        return ${{feature}};
+    }
+
+    public function find(int $id): {{Feature}}|Model
+    {
+        return {{Feature}}::query()->findOrFail($id);
+    }
+
+    public function store(array $inputs): {{Feature}}|Model
+    {
+        ${{feature}} = {{Feature}}::query()->create($inputs);
+
+        if (! ${{feature}}) {
+            throw new Exception('مشکل در ایجاد مورد جدید.');
+        }
+
+        $this->clear{{Features}}Cache();
+
+        return ${{feature}};
+    }
+
+    public function update(array $inputs, {{Feature}} ${{feature}}): {{Feature}}|Model
+    {
+        if (! ${{feature}}->update($inputs)) {
+            throw new Exception('مشکل در بروزرسانی مورد.');
+        }
+
+        $this->clear{{Features}}Cache();
+
+        return ${{feature}}->refresh();
+    }
+
+    public function destroy({{Feature}} ${{feature}}): {{Feature}}|Model
+    {
+        if (! ${{feature}}->delete()) {
+            throw new Exception('مشکل در حذف مورد.');
+        }
+
+        $this->clear{{Features}}Cache();
+
+        return ${{feature}};
+    }
+
+    private function get{{Features}}(): mixed
+    {
+        return $this->baseQuery()->paginate($this->perPage(), ['*'], 'page');
+    }
+
+    private function getPublic{{Features}}(): mixed
+    {
+        // SECURITY DEFAULT: no records are exposed publicly until this condition is customized.
+        // Replace whereRaw('1 = 0') with the real public-visibility rule for this feature.
+        return $this->baseQuery()
+            ->whereRaw('1 = 0')
+            ->paginate($this->perPage(), ['*'], 'page');
+    }
+
+    private function baseQuery(): Builder
+    {
+        return {{Feature}}::query()
+            ->ignoreRequest(['per_page'])
+            ->filter();
+    }
+
+    private function perPage(): int
+    {
+        return (int) request()->query(
+            'per_page',
+            config('eloquentFilter.max_limit', 20)
+        );
+    }
+
+    private function get{{Features}}CacheKey(): string
+    {
+        $queryParams = request()->query();
+        ksort($queryParams);
+
+        return '{{features_snake}}_index_' . md5(
+            request()->path() . serialize($queryParams)
+        );
+    }
+
+    private function get{{Features}}FromCache(string $cacheKey): ?array
+    {
+        $data = Redis::get($cacheKey);
+
+        return $data !== null
+            ? json_decode($data, true)
+            : null;
+    }
+
+    private function cache{{Features}}(string $cacheKey, array $data): void
+    {
+        Redis::setex(
+            $cacheKey,
+            10 * 60,
+            json_encode($data, JSON_UNESCAPED_UNICODE)
+        );
+    }
+
+    private function clear{{Features}}Cache(): void
+    {
+        $this->clearCache('*{{features_snake}}_index_*');
+    }
+}
